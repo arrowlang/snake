@@ -1,24 +1,83 @@
 import sdl from "./sdl2";
 // TODO: import "./sdl2" as sdl;
 
+import list from "./list";
+// TODO: import "./list" as list;
+
+extern def printf(a: str, a: int);
+
+struct Snake {
+  // TODO: This should be a deque not a vector
+  position: list.List,
+
+  // NOTE: Enum would be nice here
+  // 0 - 'left'
+  // 1 - 'top'
+  // 2 - 'right'
+  // 3 - 'bottom'
+  direction: int,
+}
+
+let box_width = 15;
+let box_height = 15;
+
+let grid_width = 40;
+let grid_height = 40;
+
 let mutable g_window: *sdl.SDL_Window = 0 as *sdl.SDL_Window;
 let mutable g_renderer: *sdl.SDL_Renderer = 0 as *sdl.SDL_Renderer;
+
+let mutable g_snake = Snake(list.new(), 2);
 
 def main() -> int {
   initilize();
 
+  // Create the initial snake
+  list.push(g_snake.position, 1 * grid_width + 5);
+  list.push(g_snake.position, 2 * grid_width + 5);
+  list.push(g_snake.position, 3 * grid_width + 5);
+  list.push(g_snake.position, 4 * grid_width + 5);
+  list.push(g_snake.position, 5 * grid_width + 5);
+  list.push(g_snake.position, 5 * grid_width + 6);
+  list.push(g_snake.position, 5 * grid_width + 7);
+  list.push(g_snake.position, 5 * grid_width + 8);
+  list.push(g_snake.position, 5 * grid_width + 9);
+  list.push(g_snake.position, 5 * grid_width + 10);
+  list.push(g_snake.position, 5 * grid_width + 11);
+
   let mutable running = true;
   let evt = sdl.SDL_Event(0, 0, 0, 0, 0, 0, 0, 0);
+  let kbd_evt = &evt as *sdl.SDL_KeyboardEvent;
+
+  let mutable sym = 0;
 
   while running {
     // Handle events ..
     while sdl.SDL_PollEvent(&evt) != 0 {
       if evt.type_ == 0x100 {  // SDL_Quit
         running = false;
+      } else if evt.type_ == 0x300 {  // SDL_KEYDOWN
+        sym = (*kbd_evt).keysym.scancode;
+        // printf("%d\n", sym);
+        if sym == 80 {  // <-
+          g_snake.direction = 0;
+        } else if sym == 79 {  // ->
+          g_snake.direction = 2;
+        } else if sym == 82 {  // ^
+          g_snake.direction = 1;
+        } else if sym == 81 {  // v
+          g_snake.direction = 3;
+        }
       }
     }
 
     draw();
+
+    // DEBUG: To make it slow for now
+    sdl.SDL_Delay(100);
+
+    // TODO: Time stepped update
+    update();
   }
 
   dispose();
@@ -35,7 +94,7 @@ def initilize() {
     "Snake",
     sdl.SDL_WINDOWPOS_CENTERED,
     sdl.SDL_WINDOWPOS_CENTERED,
-    640, 480,
+    480, 480,
     sdl.SDL_WINDOW_SHOWN
   );
 
@@ -49,8 +108,11 @@ def initilize() {
 }
 
 def dispose() {
+  list.dispose(g_snake.position);
+
   sdl.SDL_DestroyRenderer(g_renderer);
   sdl.SDL_DestroyWindow(g_window);
+
   sdl.SDL_Quit();
 }
 
@@ -58,6 +120,50 @@ def draw() {
   sdl.SDL_SetRenderDrawColor(g_renderer, 25, 25, 25, 255);
   sdl.SDL_RenderClear(g_renderer);
 
+  sdl.SDL_SetRenderDrawColor(g_renderer, 230, 230, 230, 255);
+
+  let mutable i = 0;
+  let mutable x = 0;
+  let mutable y = 0;
+  let mutable box_index: int;
+  let mutable rect = sdl.SDL_Rect(0, 0, 0, 0);
+
+  while i < g_snake.position._size {
+    box_index = list.at(g_snake.position, i);
+    y = box_index / grid_width;
+    x = box_index % grid_width;
+    rect = sdl.SDL_Rect(x * 15 as int32, y * 15 as int32, 15, 15);
+
+    sdl.SDL_RenderFillRect(g_renderer, &rect);
+
+    i += 1;
+  }
 
   sdl.SDL_RenderPresent(g_renderer);
+}
+
+def update() {
+  // Erase the last block
+  list.erase(g_snake.position, 0);
+
+  // Push a new block (in the current direction)
+  let pos = list.at(g_snake.position, -1);
+  let mutable x = pos % grid_width;
+  let mutable y = pos / grid_width;
+
+  if g_snake.direction == 0 {
+    // left
+    x -= 1;
+  } else if g_snake.direction == 1 {
+    // top
+    y -= 1;
+  } else if g_snake.direction == 2 {
+    // right
+    x += 1;
+  } else if g_snake.direction == 3 {
+    // bottom
+    y += 1;
+  }
+
+  list.push(g_snake.position, y * grid_width + x);
 }

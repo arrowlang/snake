@@ -36,6 +36,33 @@ export extern def SDL_WasInit(flags: uint32 = 0) -> uint32;
 /// call it upon all exit conditions.
 export extern def SDL_Quit();
 
+// TODO: SDL_rect.h
+// =============================================================================
+
+/// The structure that defines a point.
+// TODO: export struct SDL_Point {
+//   x: c_int,
+//   y: c_int
+// }
+export struct SDL_Point {
+  x: int32,
+  y: int32
+}
+
+/// A rectangle, with the origin at the upper left.
+// TODO: export struct SDL_Rect {
+//   x: c_int,
+//   y: c_int,
+//   w: c_int,
+//   h: c_int,
+// }
+export struct SDL_Rect {
+  x: int32,
+  y: int32,
+  w: int32,
+  h: int32,
+}
+
 // TODO: SDL_video.h
 // =============================================================================
 
@@ -143,11 +170,41 @@ export extern def SDL_RenderPresent(renderer: *SDL_Renderer);
 /// Destroy the rendering context for a window and free associated textures.
 export extern def SDL_DestroyRenderer(renderer: *SDL_Renderer);
 
+/// Draw a point on the current rendering target.
+// TODO: export extern def SDL_RenderDrawPoint(
+//   renderer: *SDL_Renderer, c_int x, c_int y
+// ) -> c_int;
+export extern def SDL_RenderDrawPoint(
+  renderer: *SDL_Renderer, x: int32, y: int32
+) -> int32;
+
+/// Draw a rectangle on the current rendering target.
+// TODO: export extern def SDL_RenderDrawRect(renderer: *SDL_Renderer, rect: *SDL_Rect) -> c_int;
+export extern def SDL_RenderDrawRect(renderer: *SDL_Renderer, rect: *SDL_Rect)
+  -> int32;
+
+/// Fill a rectangle on the current rendering target with the drawing color.
+// TODO: export extern def SDL_RenderFillRect(renderer: *SDL_Renderer, rect: *SDL_Rect) -> c_int;
+export extern def SDL_RenderFillRect(renderer: *SDL_Renderer, rect: *SDL_Rect)
+  -> int32;
+
 // TODO: SDL_timer.h
 // =============================================================================
 
 /// Wait a specified number of milliseconds before returning.
 export extern def SDL_Delay(ms: uint32);
+
+
+// TODO: SDL_keyboard.h
+// =============================================================================
+
+/// The SDL keysym structure, used in key events.
+export struct SDL_Keysym {
+  scancode: uint32,
+  sym: uint32,
+  mod: uint16,
+  unused: uint32,
+};
 
 // TODO: SDL_events.h
 // =============================================================================
@@ -164,6 +221,19 @@ export struct SDL_Event {
   a5: uint64,
   a6: uint64,
   a7: uint64,
+}
+
+/// Keyboard button event structure (event.key.*)
+export struct SDL_KeyboardEvent {
+  type_: uint32,
+  timestamp: uint32,
+  window_id: uint32,
+  state: uint8,
+  repeat: uint8,
+  // TODO: _: byte[2]
+  a1: byte,
+  a2: byte,
+  keysym: SDL_Keysym
 }
 
 /// Polls for currently pending events.
