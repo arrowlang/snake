@@ -9,8 +9,11 @@ build/snake.ll: $(SOURCES)
 	@ mkdir -p ./build
 	@ arrow --compile src/index.as > $@
 
-build/snake.o: build/snake.ll
-	@ opt -O3 -S $^ | opt -O3 -S | opt -O3 -S | opt -O3 -S | llc -filetype=obj -o $@
+build/snake-opt.ll: build/snake.ll
+	@ opt -O3 -S $^ | opt -O3 -S | opt -O3 -S | opt -O3 -S > $@
+
+build/snake.o: build/snake-opt.ll
+	@ llc -filetype=obj -o $@ $^
 
 build/snake: build/snake.o
 	@ gcc -o $@ $^ -lc -lSDL2
