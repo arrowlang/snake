@@ -21,7 +21,7 @@ struct Snake {
   direction: int,
 }
 
-let g_apples = list.new();
+let mutable g_apples = list.new();
 
 let box_width = 15;
 let box_height = 15;
