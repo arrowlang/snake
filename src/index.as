@@ -18,6 +18,8 @@ struct Snake {
   direction: int,
 }
 
+let g_apples = list.new();
+
 let box_width = 15;
 let box_height = 15;
 
@@ -59,14 +61,16 @@ def main() -> int {
       } else if evt.type_ == 0x300 {  // SDL_KEYDOWN
         sym = (*kbd_evt).keysym.scancode;
         // printf("%d\n", sym);
-        if sym == 80 {  // <-
-          g_snake.direction = 0;
-        } else if sym == 79 {  // ->
+        if sym == 80 and g_snake.direction != 2 {  // <-
+            g_snake.direction = 0;
+        } else if sym == 79 and g_snake.direction != 0 {  // ->
           g_snake.direction = 2;
-        } else if sym == 82 {  // ^
+        } else if sym == 82 and g_snake.direction != 3 {  // ^
           g_snake.direction = 1;
-        } else if sym == 81 {  // v
+        } else if sym == 81 and g_snake.direction != 1 {  // v
           g_snake.direction = 3;
+        } else if sym == 41 { // esc
+          running = false;
         }
       }
     }
@@ -74,10 +78,10 @@ def main() -> int {
     draw();
 
     // DEBUG: To make it slow for now
-    sdl.SDL_Delay(100);
+    sdl.SDL_Delay(42);
 
     // TODO: Time stepped update
-    update();
+    update(running);
   }
 
   dispose();
@@ -105,6 +109,20 @@ def initilize() {
     sdl.SDL_RENDERER_ACCELERATED
     | sdl.SDL_RENDERER_PRESENTVSYNC
   );
+
+  list.push(g_apples, 8 * grid_width + 6);
+}
+
+def drawOuter() {
+  let topRect = sdl.SDL_Rect(0 as int32, 0 as int32, 480, 15);
+  let bottomRect = sdl.SDL_Rect(0 as int32, 465 as int32, 480, 15);
+  let leftRect = sdl.SDL_Rect(0 as int32, 0 as int32, 15, 480);
+  let rightRect = sdl.SDL_Rect(465 as int32, 0 as int32, 15, 480);
+
+  sdl.SDL_RenderFillRect(g_renderer, &topRect);
+  sdl.SDL_RenderFillRect(g_renderer, &bottomRect);
+  sdl.SDL_RenderFillRect(g_renderer, &leftRect);
+  sdl.SDL_RenderFillRect(g_renderer, &rightRect);
 }
 
 def dispose() {
@@ -128,8 +146,25 @@ def draw() {
   let mutable box_index: int;
   let mutable rect = sdl.SDL_Rect(0, 0, 0, 0);
 
+  drawOuter();
+
   while i < g_snake.position._size {
     box_index = list.at(g_snake.position, i);
+    y = box_index / grid_width;
+    x = box_index % grid_width;
+    rect = sdl.SDL_Rect(x * 15 as int32, y * 15 as int32, 15, 15);
+
+    sdl.SDL_RenderFillRect(g_renderer, &rect);
+
+    i += 1;
+  }
+
+  // Apples time.
+  i = 0;
+  sdl.SDL_SetRenderDrawColor(g_renderer, 245, 15, 15, 255);
+
+  while i < g_apples._size {
+    box_index = list.at(g_apples, i);
     y = box_index / grid_width;
     x = box_index % grid_width;
     rect = sdl.SDL_Rect(x * 15 as int32, y * 15 as int32, 15, 15);
@@ -142,10 +177,61 @@ def draw() {
   sdl.SDL_RenderPresent(g_renderer);
 }
 
-def update() {
-  // Erase the last block
-  list.erase(g_snake.position, 0);
+def newApple() {
+  list.push(g_apples, 8 * grid_width + 7);
+}
 
+def checkCollision(mutable status: bool, x: int, y: int) {
+  // Variables
+  let mutable i = 0;
+  let mutable cx = 0;
+  let mutable cy = 0;
+  let mutable box_index: int;
+
+  // Logic
+
+  // Border checks
+  if y == 0 or y == 31 or x == 0 or x == 31 {
+    status = false;
+  }
+
+  // Snake collision
+  while (i < g_snake.position._size) & status {
+    box_index = list.at(g_snake.position, i);
+    cx = box_index % grid_width;
+    cy = box_index / grid_width;
+    i += 1;
+
+    if x == cx and y == cy {
+      status = false;
+    }
+  }
+
+  i = 0;
+  let mutable appleCollision = false;
+
+  // Apple collision
+  while i < g_apples._size {
+    box_index = list.at(g_apples, i);
+    cx = box_index % grid_width;
+    cy = box_index / grid_width;
+
+    if cx == x and cy == y {
+      appleCollision = true;
+      list.erase(g_apples, i);
+      newApple();
+    }
+
+    i += 1;
+  }
+
+  if !appleCollision {
+    // Erase the last block
+    list.erase(g_snake.position, 0);
+  }
+}
+
+def update(mutable status: bool) {
   // Push a new block (in the current direction)
   let pos = list.at(g_snake.position, -1);
   let mutable x = pos % grid_width;
@@ -164,6 +250,8 @@ def update() {
     // bottom
     y += 1;
   }
+
+  checkCollision(status, x, y);
 
   list.push(g_snake.position, y * grid_width + x);
 }
