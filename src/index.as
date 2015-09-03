@@ -6,6 +6,9 @@ import list from "./list";
 
 extern def printf(a: str, a: int);
 
+extern def rand() -> int32;
+extern def srand(a: uint32);
+
 struct Snake {
   // TODO: This should be a deque not a vector
   position: list.List,
@@ -178,7 +181,7 @@ def draw() {
 }
 
 def newApple() {
-  list.push(g_apples, 8 * grid_width + 7);
+  list.push(g_apples, ((rand() % 13) + 1) * grid_width + ((rand() % 13) + 1));
 }
 
 def checkCollision(mutable status: bool, x: int, y: int) {
